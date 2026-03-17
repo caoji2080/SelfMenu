@@ -11,7 +11,7 @@ orientation = portrait
 android.permissions = INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.api = 32
 android.minapi = 21
-android.ndk = 25c
+android.ndk = 25.2.9519653
 android.accept_sdk_license = True
 android.arch = arm64-v8a
 

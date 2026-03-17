@@ -1,4 +1,4 @@
-# Build Android APK - 使用 NDK 25c（官方最新版本）
+# Build Android APK - 从 GitHub 下载 NDK 25c
 
 name: Build Android APK
 
@@ -33,6 +33,43 @@ jobs:
           cmdline-tools-version: 8512546
           platforms: android-32
           build-tools: 32.0.0
+
+      - name: Download NDK 25c from GitHub
+        run: |
+          echo "=== Downloading NDK 25c from GitHub ==="
+          
+          # 创建 NDK 目录
+          mkdir -p ${ANDROID_HOME}/ndk
+          
+          # 从 GitHub 下载 NDK 25c
+          NDK_URL="https://github.com/android/ndk/releases/download/25.2.9519653/android-ndk-r25c-linux.zip"
+          NDK_ZIP="${ANDROID_HOME}/ndk/android-ndk-r25c-linux.zip"
+          NDK_DIR="${ANDROID_HOME}/ndk/25.2.9519653"
+          
+          echo "Downloading from: $NDK_URL"
+          curl -L -o "$NDK_ZIP" "$NDK_URL"
+          
+          if [ -f "$NDK_ZIP" ]; then
+            echo "✅ NDK downloaded successfully"
+            
+            # 解压 NDK
+            echo "Extracting NDK..."
+            unzip -q "$NDK_ZIP" -d ${ANDROID_HOME}/ndk
+            rm "$NDK_ZIP"
+            
+            # 重命名目录为版本号
+            if [ -d "${ANDROID_HOME}/ndk/android-ndk-r25c" ]; then
+              mv "${ANDROID_HOME}/ndk/android-ndk-r25c" "$NDK_DIR"
+            fi
+            
+            echo "✅ NDK installed at: $NDK_DIR"
+            ls -la "$NDK_DIR"
+          else
+            echo "❌ Failed to download NDK"
+            exit 1
+          fi
+          
+          echo "=== NDK Setup Complete ==="
 
       - name: Prepare Project
         run: |
