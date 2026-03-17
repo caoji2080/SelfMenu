@@ -1,4 +1,4 @@
-# Build Android APK - 从 GitHub 下载 NDK 25c
+# Build Android APK - 手动下载 NDK 25c（增强版本）
 
 name: Build Android APK
 
@@ -34,42 +34,114 @@ jobs:
           platforms: android-32
           build-tools: 32.0.0
 
-      - name: Download NDK 25c from GitHub
+      - name: Download and Install NDK 25c
         run: |
-          echo "=== Downloading NDK 25c from GitHub ==="
+          echo "=== Starting NDK 25c Installation ==="
           
-          # 创建 NDK 目录
-          mkdir -p ${ANDROID_HOME}/ndk
-          
-          # 从 GitHub 下载 NDK 25c
+          # 定义路径
           NDK_URL="https://github.com/android/ndk/releases/download/25.2.9519653/android-ndk-r25c-linux.zip"
-          NDK_ZIP="${ANDROID_HOME}/ndk/android-ndk-r25c-linux.zip"
-          NDK_DIR="${ANDROID_HOME}/ndk/25.2.9519653"
+          NDK_ZIP="/tmp/android-ndk-r25c-linux.zip"
+          NDK_BASE="${ANDROID_HOME}/ndk"
+          NDK_VERSION="25.2.9519653"
+          NDK_DIR="${NDK_BASE}/${NDK_VERSION}"
           
-          echo "Downloading from: $NDK_URL"
-          curl -L -o "$NDK_ZIP" "$NDK_URL"
+          # 创建目录
+          mkdir -p "$NDK_BASE"
           
-          if [ -f "$NDK_ZIP" ]; then
-            echo "✅ NDK downloaded successfully"
+          # 检查是否已安装
+          if [ -d "$NDK_DIR" ] && [ -f "${NDK_DIR}/source.properties" ]; then
+            echo "✅ NDK already installed at: $NDK_DIR"
+            cat "${NDK_DIR}/source.properties"
+            exit 0
+          fi
+          
+          # 下载 NDK（带重试和进度显示）
+          echo "📥 Downloading NDK 25c from GitHub..."
+          echo "URL: $NDK_URL"
+          echo "Target: $NDK_ZIP"
+          
+          # 使用 curl 下载（带重试和进度）
+          max_attempts=3
+          attempt=1
+          
+          while [ $attempt -le $max_attempts ]; do
+            echo "Download attempt $attempt of $max_attempts..."
             
-            # 解压 NDK
-            echo "Extracting NDK..."
-            unzip -q "$NDK_ZIP" -d ${ANDROID_HOME}/ndk
-            rm "$NDK_ZIP"
-            
-            # 重命名目录为版本号
-            if [ -d "${ANDROID_HOME}/ndk/android-ndk-r25c" ]; then
-              mv "${ANDROID_HOME}/ndk/android-ndk-r25c" "$NDK_DIR"
+            if curl -L -C - -o "$NDK_ZIP" "$NDK_URL" --progress-bar; then
+              # 检查文件大小（应该大于 50MB）
+              file_size=$(stat -c%s "$NDK_ZIP" 2>/dev/null || echo "0")
+              file_size_mb=$((file_size / 1024 / 1024))
+              
+              echo ""
+              echo "📊 Downloaded file size: ${file_size_mb} MB"
+              
+              if [ $file_size_mb -gt 50 ]; then
+                echo "✅ Download successful (${file_size_mb} MB)"
+                break
+              else
+                echo "⚠️ File too small (${file_size_mb} MB), retrying..."
+                rm -f "$NDK_ZIP"
+                attempt=$((attempt + 1))
+                sleep 5
+              fi
+            else
+              echo "⚠️ Download failed, retrying in 5 seconds..."
+              attempt=$((attempt + 1))
+              sleep 5
             fi
-            
-            echo "✅ NDK installed at: $NDK_DIR"
-            ls -la "$NDK_DIR"
-          else
-            echo "❌ Failed to download NDK"
+          done
+          
+          # 验证下载结果
+          if [ ! -f "$NDK_ZIP" ]; then
+            echo "❌ Failed to download NDK after $max_attempts attempts"
             exit 1
           fi
           
-          echo "=== NDK Setup Complete ==="
+          file_size=$(stat -c%s "$NDK_ZIP")
+          file_size_mb=$((file_size / 1024 / 1024))
+          
+          if [ $file_size_mb -lt 50 ]; then
+            echo "❌ Downloaded file is too small (${file_size_mb} MB, expected >50 MB)"
+            exit 1
+          fi
+          
+          # 解压 NDK
+          echo ""
+          echo "📦 Extracting NDK..."
+          unzip -q "$NDK_ZIP" -d "$NDK_BASE"
+          rm -f "$NDK_ZIP"
+          
+          # 查找并移动到正确目录
+          extracted_dir="${NDK_BASE}/android-ndk-r25c"
+          
+          if [ ! -d "$extracted_dir" ]; then
+            echo "❌ Extraction failed, directory not found: $extracted_dir"
+            ls -la "$NDK_BASE"
+            exit 1
+          fi
+          
+          # 移动到目标目录
+          echo "Moving NDK to: $NDK_DIR"
+          mv "$extracted_dir" "$NDK_DIR"
+          
+          # 验证安装
+          echo ""
+          echo "=== NDK Installation Complete ==="
+          echo "Location: $NDK_DIR"
+          
+          if [ -f "${NDK_DIR}/source.properties" ]; then
+            echo "Version info:"
+            cat "${NDK_DIR}/source.properties"
+          else
+            echo "⚠️ Warning: source.properties not found"
+          fi
+          
+          echo ""
+          echo "Directory contents:"
+          ls -la "$NDK_DIR" | head -20
+          
+          echo ""
+          echo "✅ NDK 25c installed successfully!"
 
       - name: Prepare Project
         run: |
