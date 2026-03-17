@@ -1,4 +1,4 @@
-# Build Android APK - 使用最新 Buildozer + NDK 23b
+# Build Android APK - 使用 NDK 25c（官方最新版本）
 
 name: Build Android APK
 
@@ -25,9 +25,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
           pip install --upgrade pip
-          # 安装最新版本的 buildozer（修复了文件句柄 bug）
-          pip install flet==0.23.0 cython
-          pip install https://github.com/kivy/buildozer/archive/master.zip
+          pip install flet==0.23.0 cython buildozer
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
