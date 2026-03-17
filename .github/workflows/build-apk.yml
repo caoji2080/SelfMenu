@@ -79,7 +79,7 @@ jobs:
         timeout-minutes: 90
 
       - name: Upload APK artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: menu-app-debug
           path: menuapp_build/bin/*-debug.apk
