@@ -1,4 +1,4 @@
-# Build Android APK - 最终简化版（直接使用 buildozer.spec）
+# Build Android APK - 最终版（修复 NDK 版本）
 
 name: Build Android APK
 
@@ -33,6 +33,7 @@ jobs:
           cmdline-tools-version: 8512546
           platforms: android-32
           build-tools: 32.0.0
+          ndk-version: 25.2.9519653  # ← 新增：指定 NDK 版本 25b
 
       - name: Prepare Project
         run: |
