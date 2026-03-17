@@ -1,0 +1,112 @@
+# Build Android APK - 最终版本
+# 使用.txt 扩展名避免文件格式问题
+
+name: Build Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git zip openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
+          pip install --upgrade pip
+          pip install flet==0.23.0 buildozer cython
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+        with:
+          cmdline-tools-version: 8512546
+          platforms: android-32
+          build-tools: 32.0.0
+
+      - name: Prepare Project
+        run: |
+          echo "=== Starting Build Preparation ==="
+
+          mkdir -p build
+          cd build
+
+          echo "Copying project files..."
+          cp -rv ../mobile/* . || true
+          cp -rv ../models . || true
+          cp -rv ../services . || true
+          cp -rv ../repositories . || true
+          cp -rv ../utils . || true
+          cp -rv ../data . || true
+
+          # 关键：重命名.txt 为.spec
+          echo ""
+          echo "Renaming buildozer.txt to buildozer.spec..."
+          if [ -f "buildozer.txt" ]; then
+            mv buildozer.txt buildozer.spec
+            echo "✅ Renamed successfully"
+          else
+            echo "❌ buildozer.txt not found"
+          fi
+
+          echo ""
+          echo "=== Files in build directory ==="
+          ls -la
+
+          echo ""
+          echo "=== Checking critical files ==="
+          if [ -f "android_main.py" ]; then
+            echo "✅ android_main.py found"
+          else
+            echo "❌ android_main.py NOT found"
+          fi
+
+          if [ -f "buildozer.spec" ]; then
+            echo "✅ buildozer.spec found"
+            echo "First 10 lines:"
+            head -10 buildozer.spec
+          else
+            echo "❌ buildozer.spec NOT found"
+          fi
+
+          echo ""
+          echo "=== Preparation Complete ==="
+
+      - name: Build APK
+        run: |
+          echo "=== Starting APK Build ==="
+          cd build
+
+          rm -rf .buildozer
+
+          echo "Running buildozer..."
+          buildozer android debug
+
+          echo "=== Build Complete ==="
+        timeout-minutes: 90
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: menu-app
+          path: build/bin/*.apk
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: build/bin/*.apk
+          name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
