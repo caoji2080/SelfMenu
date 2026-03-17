@@ -1,4 +1,4 @@
-# Build Android APK - 使用预安装 NDK（隔离下载问题）
+# Build Android APK - 使用预安装 NDK（智能路径检测）
 
 name: Build Android APK
 
@@ -35,29 +35,90 @@ jobs:
           build-tools: 32.0.0
           ndk-version: 25.1.8937393
 
-      - name: Setup NDK Environment
+      - name: Detect and Setup NDK
         run: |
-          echo "=== Setting up NDK Environment ==="
+          echo "=== Starting NDK Detection ==="
           
-          # 设置 NDK 环境变量
-          export ANDROID_NDK=${ANDROID_HOME}/ndk/25.1.8937393
-          export NDK_HOME=${ANDROID_HOME}/ndk/25.1.8937393
+          # 可能的 NDK 路径列表
+          NDK_PATHS=(
+            "${ANDROID_HOME}/ndk/25.1.8937393"
+            "/usr/local/lib/android/sdk/ndk/25.1.8937393"
+            "${ANDROID_NDK_HOME}"
+            "${HOME}/android-sdk/ndk/25.1.8937393"
+            "/opt/android-sdk/ndk/25.1.8937393"
+          )
           
-          echo "ANDROID_NDK=$ANDROID_NDK" >> $GITHUB_ENV
-          echo "NDK_HOME=$NDK_HOME" >> $GITHUB_ENV
+          ACTUAL_NDK_PATH=""
           
-          # 验证 NDK 安装
-          if [ -d "$ANDROID_NDK" ]; then
-            echo "✅ NDK installed at: $ANDROID_NDK"
-            ls -la "$ANDROID_NDK" | head -10
-          else
-            echo "❌ NDK not found at: $ANDROID_NDK"
-            echo "Available in Android home:"
-            ls -la ${ANDROID_HOME}
+          # 检查标准路径
+          for path in "${NDK_PATHS[@]}"; do
+            if [ -n "$path" ] && [ -d "$path" ]; then
+              echo "✅ Found NDK at: $path"
+              ACTUAL_NDK_PATH="$path"
+              break
+            fi
+          done
+          
+          # 如果标准路径未找到，尝试动态搜索
+          if [ -z "$ACTUAL_NDK_PATH" ]; then
+            echo "⚠️ Standard paths not found, searching dynamically..."
+            
+            # 方法 1: 查找 source.properties 文件
+            FOUND_SOURCE=$(find ${ANDROID_HOME} -name "source.properties" -path "*/ndk/*" 2>/dev/null | head -1)
+            if [ -n "$FOUND_SOURCE" ]; then
+              ACTUAL_NDK_PATH=$(dirname "$FOUND_SOURCE")
+              echo "✅ Found via source.properties: $ACTUAL_NDK_PATH"
+            fi
+            
+            # 方法 2: 查找 ndk-build 文件
+            if [ -z "$ACTUAL_NDK_PATH" ]; then
+              FOUND_NDBUILD=$(find ${ANDROID_HOME} -name "ndk-build" -type f 2>/dev/null | head -1)
+              if [ -n "$FOUND_NDBUILD" ]; then
+                ACTUAL_NDK_PATH=$(dirname "$FOUND_NDBUILD")
+                echo "✅ Found via ndk-build: $ACTUAL_NDK_PATH"
+              fi
+            fi
+            
+            # 方法 3: 列出所有 ndk 目录
+            if [ -z "$ACTUAL_NDK_PATH" ]; then
+              echo "📋 Available NDK directories:"
+              find ${ANDROID_HOME} -maxdepth 3 -type d -name "ndk*" 2>/dev/null || echo "  None found in ANDROID_HOME"
+              find /usr -maxdepth 4 -type d -name "ndk*" 2>/dev/null || echo "  None found in /usr"
+              exit 1
+            fi
+          fi
+          
+          # 验证 NDK
+          if [ ! -d "$ACTUAL_NDK_PATH" ]; then
+            echo "❌ NDK directory does not exist: $ACTUAL_NDK_PATH"
             exit 1
           fi
           
-          echo "=== NDK Environment Setup Complete ==="
+          echo ""
+          echo "=== NDK Information ==="
+          echo "Detected Path: $ACTUAL_NDK_PATH"
+          
+          if [ -f "$ACTUAL_NDK_PATH/source.properties" ]; then
+            echo "Version Details:"
+            cat "$ACTUAL_NDK_PATH/source.properties"
+          fi
+          
+          echo "Contents:"
+          ls -la "$ACTUAL_NDK_PATH" | head -15
+          echo "========================="
+          
+          # 设置环境变量
+          export ANDROID_NDK="$ACTUAL_NDK_PATH"
+          export NDK_HOME="$ACTUAL_NDK_PATH"
+          
+          echo "ANDROID_NDK=$ACTUAL_NDK_PATH" >> $GITHUB_ENV
+          echo "NDK_HOME=$ACTUAL_NDK_PATH" >> $GITHUB_ENV
+          
+          echo ""
+          echo "✅ NDK environment configured successfully!"
+          echo "   ANDROID_NDK=$ACTUAL_NDK_PATH"
+          echo "   NDK_HOME=$ACTUAL_NDK_PATH"
+          echo "=== NDK Setup Complete ==="
 
       - name: Prepare Project
         run: |
@@ -74,29 +135,45 @@ jobs:
           cp -rv ../utils . || true
           cp -rv ../data . || true
           
-          # 创建 buildozer.local.spec 覆盖配置，指定 NDK 路径
-          echo "" >> buildozer.spec
-          echo "# Auto-generated for CI environment" >> buildozer.spec
-          echo "android.ndk_path = ${ANDROID_HOME}/ndk/25.1.8937393" >> buildozer.spec
-          
+          # 显示复制后的文件结构
           echo ""
           echo "=== Files in build directory ==="
           ls -la
           
           echo ""
           echo "=== Checking critical files ==="
+          
           if [ -f "android_main.py" ]; then
             echo "✅ android_main.py found"
           else
             echo "❌ android_main.py NOT found"
+            exit 1
           fi
           
           if [ -f "buildozer.spec" ]; then
             echo "✅ buildozer.spec found"
-            echo "Content:"
+            echo ""
+            echo "Original content:"
+            cat buildozer.spec
+            echo ""
+            
+            # 添加 NDK 路径配置
+            if [ -n "$NDK_HOME" ]; then
+              echo "# Auto-generated NDK path for CI" >> buildozer.spec
+              echo "android.ndk_path = $NDK_HOME" >> buildozer.spec
+              echo ""
+              echo "✅ Added NDK path to buildozer.spec:"
+              echo "   android.ndk_path = $NDK_HOME"
+            else
+              echo "⚠️ Warning: NDK_HOME not set, buildozer will use default detection"
+            fi
+            
+            echo ""
+            echo "Final content:"
             cat buildozer.spec
           else
             echo "❌ buildozer.spec NOT found"
+            exit 1
           fi
           
           echo ""
@@ -107,19 +184,34 @@ jobs:
           echo "=== Starting APK Build ==="
           cd build
           
+          # 清理旧的构建缓存
+          echo "Cleaning old build cache..."
           rm -rf .buildozer
           
-          echo "Running buildozer..."
+          # 开始构建
+          echo "Running buildozer android debug..."
           buildozer android debug
           
-          echo "=== Build Complete ==="
+          BUILD_STATUS=$?
+          
+          if [ $BUILD_STATUS -eq 0 ]; then
+            echo ""
+            echo "=== ✅ Build Successful ==="
+            echo "APK location:"
+            ls -lh bin/*.apk 2>/dev/null || echo "⚠️ APK not found in bin/"
+          else
+            echo ""
+            echo "=== ❌ Build Failed (exit code: $BUILD_STATUS) ==="
+            exit $BUILD_STATUS
+          fi
         timeout-minutes: 90
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: menu-app
+          name: menu-app-${{ github.sha }}
           path: build/bin/*.apk
+          retention-days: 30
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -127,5 +219,7 @@ jobs:
         with:
           files: build/bin/*.apk
           name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
