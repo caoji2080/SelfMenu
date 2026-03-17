@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "menu-app"
+version = "1.0.0"
+description = "个人菜谱管理系统 - 一款功能强大的菜谱管理应用"
+authors = [
+    {name = "MenuApp Team", email = "your@email.com"}
+]
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "flet==0.23.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/menuapp"
+
+[tool.setuptools.packages.find]
+include = ["mobile*", "models*", "services*", "repositories*", "utils*"]
+
+[tool.flet.build]
+app_name = "MenuApp"
+product_name = "个人菜谱管理系统"
+company_name = "MenuApp Team"
+description = "一款功能强大的个人菜谱管理应用，支持菜谱增删改查、搜索、导入导出等功能"
+version = "1.0.0"
+homepage_url = "https://github.com/yourusername/menuapp"
+privacy_policy_url = ""
+icon = "assets/icon.png"
