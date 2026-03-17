@@ -33,7 +33,7 @@ jobs:
           cmdline-tools-version: 8512546
           platforms: android-32
           build-tools: 32.0.0
-          ndk-version: 25.2.9519653  # ← 新增：指定 NDK 版本 25b
+          ndk-version: 25.1.8937393 # ← 新增：指定 NDK 版本 25a
 
       - name: Prepare Project
         run: |
