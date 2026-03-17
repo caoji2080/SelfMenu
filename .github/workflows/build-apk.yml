@@ -1,4 +1,4 @@
-# Build Android APK - 最终版（修复 NDK 版本）
+# Build Android APK - 使用预安装 NDK（隔离下载问题）
 
 name: Build Android APK
 
@@ -25,7 +25,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
           pip install --upgrade pip
-          pip install flet==0.23.0 buildozer cython
+          pip install flet==0.23.0 cython buildozer
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -33,7 +33,31 @@ jobs:
           cmdline-tools-version: 8512546
           platforms: android-32
           build-tools: 32.0.0
-          ndk-version: 25.1.8937393 # ← 新增：指定 NDK 版本 25a
+          ndk-version: 25.1.8937393
+
+      - name: Setup NDK Environment
+        run: |
+          echo "=== Setting up NDK Environment ==="
+          
+          # 设置 NDK 环境变量
+          export ANDROID_NDK=${ANDROID_HOME}/ndk/25.1.8937393
+          export NDK_HOME=${ANDROID_HOME}/ndk/25.1.8937393
+          
+          echo "ANDROID_NDK=$ANDROID_NDK" >> $GITHUB_ENV
+          echo "NDK_HOME=$NDK_HOME" >> $GITHUB_ENV
+          
+          # 验证 NDK 安装
+          if [ -d "$ANDROID_NDK" ]; then
+            echo "✅ NDK installed at: $ANDROID_NDK"
+            ls -la "$ANDROID_NDK" | head -10
+          else
+            echo "❌ NDK not found at: $ANDROID_NDK"
+            echo "Available in Android home:"
+            ls -la ${ANDROID_HOME}
+            exit 1
+          fi
+          
+          echo "=== NDK Environment Setup Complete ==="
 
       - name: Prepare Project
         run: |
@@ -49,6 +73,11 @@ jobs:
           cp -rv ../repositories . || true
           cp -rv ../utils . || true
           cp -rv ../data . || true
+          
+          # 创建 buildozer.local.spec 覆盖配置，指定 NDK 路径
+          echo "" >> buildozer.spec
+          echo "# Auto-generated for CI environment" >> buildozer.spec
+          echo "android.ndk_path = ${ANDROID_HOME}/ndk/25.1.8937393" >> buildozer.spec
           
           echo ""
           echo "=== Files in build directory ==="

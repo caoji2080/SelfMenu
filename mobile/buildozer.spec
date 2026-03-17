@@ -14,6 +14,9 @@ android.minapi = 21
 android.ndk = 25a
 android.accept_sdk_license = True
 android.arch = arm64-v8a
+# NDK 路径将在 CI 环境中通过 buildozer.local.spec 自动设置
+# 本地开发如需指定，可取消下面注释并修改路径
+# android.ndk_path = /path/to/your/ndk
 
 [buildozer]
 log_level = 2
