@@ -1,4 +1,4 @@
-# Build Android APK - 自动下载 NDK 25b（带重试机制）
+# Build Android APK - 使用最新 Buildozer + NDK 23b
 
 name: Build Android APK
 
@@ -25,7 +25,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y git zip openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
           pip install --upgrade pip
-          pip install flet==0.23.0 cython buildozer
+          # 安装最新版本的 buildozer（修复了文件句柄 bug）
+          pip install flet==0.23.0 cython
+          pip install https://github.com/kivy/buildozer/archive/master.zip
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -34,9 +36,9 @@ jobs:
           platforms: android-32
           build-tools: 32.0.0
 
-      - name: Build APK with Retry
+      - name: Prepare Project
         run: |
-          echo "=== Starting APK Build Process ==="
+          echo "=== Starting Build Preparation ==="
           
           mkdir -p build
           cd build
@@ -72,52 +74,29 @@ jobs:
           fi
           
           echo ""
-          echo "=== Starting Build with Retry Mechanism ==="
+          echo "=== Preparation Complete ==="
+
+      - name: Build APK
+        run: |
+          echo "=== Starting APK Build ==="
+          cd build
           
-          # 清理旧的构建缓存
           rm -rf .buildozer
           
-          # 重试机制配置
-          max_attempts=3
-          attempt=1
-          success=false
+          echo "Running buildozer android debug..."
+          buildozer android debug
           
-          while [ $attempt -le $max_attempts ] && [ "$success" = false ]; do
+          BUILD_STATUS=$?
+          
+          if [ $BUILD_STATUS -eq 0 ]; then
             echo ""
-            echo "========================================="
-            echo "🔄 Attempt $attempt of $max_attempts"
-            echo "========================================="
-            
-            if buildozer android debug; then
-              echo ""
-              echo "✅ Build succeeded on attempt $attempt!"
-              success=true
-            else
-              echo ""
-              echo "⚠️ Build failed on attempt $attempt"
-              
-              # 清理临时文件，准备重试
-              echo "🧹 Cleaning temporary files..."
-              rm -rf .buildozer/temp
-              rm -rf .buildozer/.cache
-              
-              attempt=$((attempt + 1))
-              
-              if [ $attempt -gt $max_attempts ]; then
-                echo ""
-                echo "❌ All $max_attempts attempts failed!"
-                exit 1
-              fi
-              
-              echo "⏳ Waiting 15 seconds before retry..."
-              sleep 15
-            fi
-          done
-          
-          echo ""
-          echo "=== Build Complete ==="
-          echo "APK location:"
-          ls -lh bin/*.apk 2>/dev/null || echo "⚠️ APK not found"
+            echo "=== ✅ Build Successful ==="
+            ls -lh bin/*.apk 2>/dev/null
+          else
+            echo ""
+            echo "=== ❌ Build Failed (exit code: $BUILD_STATUS) ==="
+            exit $BUILD_STATUS
+          fi
         timeout-minutes: 90
 
       - name: Upload APK
