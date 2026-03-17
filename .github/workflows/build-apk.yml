@@ -1,5 +1,4 @@
-# Build Android APK - 终极简化版
-# 策略：最简单直接的命令，避免所有复杂操作
+# Build Android APK - 最终简化版（直接使用 buildozer.spec）
 
 name: Build Android APK
 
@@ -39,11 +38,9 @@ jobs:
         run: |
           echo "=== Starting Build Preparation ==="
           
-          # Create build directory
           mkdir -p build
           cd build
           
-          # Copy all project files
           echo "Copying project files..."
           cp -rv ../mobile/* . || true
           cp -rv ../models . || true
@@ -52,12 +49,10 @@ jobs:
           cp -rv ../utils . || true
           cp -rv ../data . || true
           
-          # Show what we have
           echo ""
           echo "=== Files in build directory ==="
           ls -la
           
-          # Verify critical files
           echo ""
           echo "=== Checking critical files ==="
           if [ -f "android_main.py" ]; then
@@ -68,8 +63,8 @@ jobs:
           
           if [ -f "buildozer.spec" ]; then
             echo "✅ buildozer.spec found"
-            echo "First 10 lines:"
-            head -10 buildozer.spec
+            echo "Content:"
+            cat buildozer.spec
           else
             echo "❌ buildozer.spec NOT found"
           fi
@@ -82,10 +77,8 @@ jobs:
           echo "=== Starting APK Build ==="
           cd build
           
-          # Clean previous builds
           rm -rf .buildozer
           
-          # Run buildozer
           echo "Running buildozer..."
           buildozer android debug
           

@@ -14,9 +14,6 @@ android.minapi = 21
 android.ndk = 23b
 android.accept_sdk_license = True
 android.arch = arm64-v8a
-p4a.source_dir =
-p4a.branch = master
-p4a.commit =
 
 [buildozer]
 log_level = 2
