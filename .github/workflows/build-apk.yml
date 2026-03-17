@@ -1,4 +1,4 @@
-# Build Android APK - 手动下载 NDK 25c（增强版本）
+# Build Android APK - 手动下载 NDK 25c（最终版本）
 
 name: Build Android APK
 
@@ -51,7 +51,18 @@ jobs:
           # 检查是否已安装
           if [ -d "$NDK_DIR" ] && [ -f "${NDK_DIR}/source.properties" ]; then
             echo "✅ NDK already installed at: $NDK_DIR"
+            
+            # 设置环境变量供 Buildozer 使用
+            export ANDROID_NDK="$NDK_DIR"
+            export NDK_HOME="$NDK_DIR"
+            echo "ANDROID_NDK=$NDK_DIR" >> $GITHUB_ENV
+            echo "NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
+            
+            echo ""
+            echo "Version info:"
             cat "${NDK_DIR}/source.properties"
+            echo ""
+            echo "✅ Using existing NDK installation"
             exit 0
           fi
           
@@ -59,6 +70,7 @@ jobs:
           echo "📥 Downloading NDK 25c from GitHub..."
           echo "URL: $NDK_URL"
           echo "Target: $NDK_ZIP"
+          echo ""
           
           # 使用 curl 下载（带重试和进度）
           max_attempts=3
@@ -140,8 +152,17 @@ jobs:
           echo "Directory contents:"
           ls -la "$NDK_DIR" | head -20
           
+          # 设置环境变量供 Buildozer 使用
+          export ANDROID_NDK="$NDK_DIR"
+          export NDK_HOME="$NDK_DIR"
+          echo "ANDROID_NDK=$NDK_DIR" >> $GITHUB_ENV
+          echo "NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
+          
           echo ""
           echo "✅ NDK 25c installed successfully!"
+          echo "Environment variables set:"
+          echo "  ANDROID_NDK=$NDK_DIR"
+          echo "  NDK_HOME=$NDK_DIR"
 
       - name: Prepare Project
         run: |
@@ -173,6 +194,7 @@ jobs:
           
           if [ -f "buildozer.spec" ]; then
             echo "✅ buildozer.spec found"
+            echo ""
             echo "Content:"
             cat buildozer.spec
           else
@@ -188,8 +210,28 @@ jobs:
           echo "=== Starting APK Build ==="
           cd build
           
+          # 清理旧的构建缓存
+          echo "Cleaning old build cache..."
           rm -rf .buildozer
           
+          # 显示 NDK 环境信息
+          echo ""
+          echo "=== NDK Environment Check ==="
+          if [ -n "$ANDROID_NDK" ]; then
+            echo "ANDROID_NDK is set: $ANDROID_NDK"
+          else
+            echo "⚠️ ANDROID_NDK is not set"
+          fi
+          
+          if [ -n "$NDK_HOME" ]; then
+            echo "NDK_HOME is set: $NDK_HOME"
+          else
+            echo "⚠️ NDK_HOME is not set"
+          fi
+          echo "==============================="
+          echo ""
+          
+          # 开始构建
           echo "Running buildozer android debug..."
           buildozer android debug
           
@@ -198,7 +240,8 @@ jobs:
           if [ $BUILD_STATUS -eq 0 ]; then
             echo ""
             echo "=== ✅ Build Successful ==="
-            ls -lh bin/*.apk 2>/dev/null
+            echo "APK location:"
+            ls -lh bin/*.apk 2>/dev/null || echo "⚠️ APK not found in bin/"
           else
             echo ""
             echo "=== ❌ Build Failed (exit code: $BUILD_STATUS) ==="
