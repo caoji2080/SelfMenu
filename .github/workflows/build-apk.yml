@@ -1,5 +1,5 @@
-# 文件名：.github/workflows/build-apk.yml
-# 目录：D:\MenuApp\.github\workflows\build-apk.yml
+# Build Android APK - 终极简化版
+# 策略：最简单直接的命令，避免所有复杂操作
 
 name: Build Android APK
 
@@ -11,38 +11,22 @@ on:
 
 jobs:
   build:
-    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up Python 3.10
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Install system dependencies
+      - name: Install Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y \
-            git \
-            zip \
-            openjdk-11-jdk \
-            autoconf \
-            automake \
-            build-essential \
-            libssl-dev \
-            libffi-dev \
-            python3-dev
-
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install flet==0.23.0
-          pip install buildozer
-          pip install cython
+          sudo apt-get install -y git zip openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
+          pip install --upgrade pip
+          pip install flet==0.23.0 buildozer cython
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -51,88 +35,74 @@ jobs:
           platforms: android-32
           build-tools: 32.0.0
 
-      - name: Prepare project for Buildozer
+      - name: Prepare Project
         run: |
-          mkdir -p menuapp_build
-          cd menuapp_build
-          cp -r ../mobile .
-          cp -r ../models .
-          cp -r ../services .
-          cp -r ../repositories .
-          cp -r ../utils .
-          cp -r ../data .
-          cp ../mobile/requirements.txt . 2>/dev/null || echo "flet==0.23.0" > requirements.txt
+          echo "=== Starting Build Preparation ==="
           
-          # 创建 main.py - 使用 echo 命令
-          echo "import sys" > main.py
-          echo "from pathlib import Path" >> main.py
-          echo "" >> main.py
-          echo "project_root = Path(__file__).parent" >> main.py
-          echo "sys.path.insert(0, str(project_root))" >> main.py
-          echo "" >> main.py
-          echo "import flet as ft" >> main.py
-          echo "from mobile.app import MenuApp" >> main.py
-          echo "" >> main.py
-          echo "def main(page: ft.Page):" >> main.py
-          echo "    page.title = \"个人菜谱管理系统\"" >> main.py
-          echo "    page.bgcolor = \"#F7F7F7\"" >> main.py
-          echo "    page.padding = 0" >> main.py
-          echo "    page.theme_mode = ft.ThemeMode.LIGHT" >> main.py
-          echo "    app = MenuApp(page)" >> main.py
-          echo "    page.add(app)" >> main.py
-          echo "" >> main.py
-          echo "if __name__ == \"__main__\":" >> main.py
-          echo "    ft.app(target=main)" >> main.py
+          # Create build directory
+          mkdir -p build
+          cd build
           
-          # 创建 buildozer.spec - 使用 echo 命令（包含 cython）
-          echo "[app]" > buildozer.spec
-          echo "title = MenuApp" >> buildozer.spec
-          echo "package.name = menuapp" >> buildozer.spec
-          echo "package.domain = com.menuapp" >> buildozer.spec
-          echo "source.dir = ." >> buildozer.spec
-          echo "source.include_exts = py,png,jpg,kv,atlas,db,csv,json" >> buildozer.spec
-          echo "source.exclude_exts = spec,pyc,__pycache__,.git,.idea" >> buildozer.spec
-          echo "version = 1.0.0" >> buildozer.spec
-          echo "requirements = python3,flet==0.23.0,cython" >> buildozer.spec
-          echo "orientation = portrait" >> buildozer.spec
-          echo "android.permissions = INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE" >> buildozer.spec
-          echo "android.api = 32" >> buildozer.spec
-          echo "android.minapi = 21" >> buildozer.spec
-          echo "android.ndk = 23b" >> buildozer.spec
-          echo "android.accept_sdk_license = True" >> buildozer.spec
-          echo "android.arch = arm64-v8a" >> buildozer.spec
-          echo "p4a.source_dir = " >> buildozer.spec
-          echo "p4a.branch = master" >> buildozer.spec
-          echo "p4a.commit = " >> buildozer.spec
-          echo "" >> buildozer.spec
-          echo "[buildozer]" >> buildozer.spec
-          echo "log_level = 2" >> buildozer.spec
-          echo "warn_on_root = 1" >> buildozer.spec
+          # Copy all project files
+          echo "Copying project files..."
+          cp -rv ../mobile/* . || true
+          cp -rv ../models . || true
+          cp -rv ../services . || true
+          cp -rv ../repositories . || true
+          cp -rv ../utils . || true
+          cp -rv ../data . || true
           
-          echo "Buildozer 配置完成"
+          # Show what we have
+          echo ""
+          echo "=== Files in build directory ==="
           ls -la
+          
+          # Verify critical files
+          echo ""
+          echo "=== Checking critical files ==="
+          if [ -f "android_main.py" ]; then
+            echo "✅ android_main.py found"
+          else
+            echo "❌ android_main.py NOT found"
+          fi
+          
+          if [ -f "buildozer.spec" ]; then
+            echo "✅ buildozer.spec found"
+            echo "First 10 lines:"
+            head -10 buildozer.spec
+          else
+            echo "❌ buildozer.spec NOT found"
+          fi
+          
+          echo ""
+          echo "=== Preparation Complete ==="
 
-      - name: Build APK with Buildozer
+      - name: Build APK
         run: |
-          cd menuapp_build
+          echo "=== Starting APK Build ==="
+          cd build
+          
+          # Clean previous builds
           rm -rf .buildozer
+          
+          # Run buildozer
+          echo "Running buildozer..."
           buildozer android debug
-          buildozer android debug
+          
+          echo "=== Build Complete ==="
         timeout-minutes: 90
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: menu-app-debug
-          path: menuapp_build/bin/*-debug.apk
+          name: menu-app
+          path: build/bin/*.apk
 
-      - name: Create Release (if tag)
+      - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
         with:
-          files: menuapp_build/bin/*-debug.apk
-          name: Release ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+          files: build/bin/*.apk
+          name: ${{ github.ref_name }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
