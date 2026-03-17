@@ -42,6 +42,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet==0.23.0
           pip install buildozer
+          pip install cython
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -83,7 +84,7 @@ jobs:
           echo "if __name__ == \"__main__\":" >> main.py
           echo "    ft.app(target=main)" >> main.py
           
-          # 创建 buildozer.spec - 使用 echo 命令
+          # 创建 buildozer.spec - 使用 echo 命令（包含 cython）
           echo "[app]" > buildozer.spec
           echo "title = MenuApp" >> buildozer.spec
           echo "package.name = menuapp" >> buildozer.spec
@@ -92,7 +93,7 @@ jobs:
           echo "source.include_exts = py,png,jpg,kv,atlas,db,csv,json" >> buildozer.spec
           echo "source.exclude_exts = spec,pyc,__pycache__,.git,.idea" >> buildozer.spec
           echo "version = 1.0.0" >> buildozer.spec
-          echo "requirements = python3,flet==0.23.0" >> buildozer.spec
+          echo "requirements = python3,flet==0.23.0,cython" >> buildozer.spec
           echo "orientation = portrait" >> buildozer.spec
           echo "android.permissions = INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE" >> buildozer.spec
           echo "android.api = 32" >> buildozer.spec
