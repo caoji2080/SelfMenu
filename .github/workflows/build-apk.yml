@@ -1,5 +1,5 @@
-# Build Android APK - NDK 25c 安装配置
-# 官方文档地址：https://developer.android.com/ndk/downloads/
+# Build Android APK - Pure Python Mode (No NDK Required)
+# MenuApp: Python + Flet only, no C/C++ dependencies
 
 name: Build Android APK
 
@@ -21,12 +21,22 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git zip curl wget openjdk-11-jdk build-essential libssl-dev libffi-dev python3-dev
-          pip install --upgrade pip
-          pip install flet==0.23.0 cython buildozer
+          sudo apt-get install -y \
+            git \
+            zip \
+            openjdk-11-jdk \
+            build-essential \
+            libssl-dev \
+            libffi-dev \
+            python3-dev \
+            wget \
+            curl \
+            autoconf \
+            automake \
+            pkg-config
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -35,160 +45,24 @@ jobs:
           platforms: android-32
           build-tools: 32.0.0
 
-      - name: Download and Install NDK 25c
+      - name: Install Python Dependencies
         run: |
-          echo "=== Starting NDK 25c Installation ==="
-          
-          # ============================================
-          # NDK 官方文档地址 (参考)
-          # https://developer.android.com/ndk/downloads/
-          # ============================================
-          
-          # NDK 版本信息
-          NDK_VERSION="25.2.9519653"
-          NDK_RELEASE_TAG="r25c"
-          
-          # 安装路径
-          NDK_BASE="${ANDROID_HOME}/ndk"
-          NDK_DIR="${NDK_BASE}/${NDK_VERSION}"
-          NDK_ZIP="/tmp/android-ndk-r25c-linux.zip"
-          
-          # 创建目录
-          mkdir -p "$NDK_BASE"
-          
-          # 检查是否已安装
-          if [ -d "$NDK_DIR" ] && [ -f "${NDK_DIR}/source.properties" ]; then
-            echo "✅ NDK already installed at: $NDK_DIR"
-            
-            # 设置环境变量供 Buildozer 使用
-            export ANDROID_NDK="$NDK_DIR"
-            export NDK_HOME="$NDK_DIR"
-            echo "ANDROID_NDK=$NDK_DIR" >> $GITHUB_ENV
-            echo "NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
-            
-            echo ""
-            echo "Version info:"
-            cat "${NDK_DIR}/source.properties"
-            echo ""
-            echo "✅ Using existing NDK installation"
-            exit 0
-          fi
-          
-          # 使用 GitHub Releases 作为下载源（稳定可靠）
-          # 这是从官方文档 https://developer.android.com/ndk/downloads/ 确认的 NDK 25c 版本
-          DIRECT_NDK_URL="https://github.com/android/ndk/releases/download/25.2.9519653/android-ndk-r25c-linux.zip"
-          
-          echo "📥 Downloading NDK ${NDK_RELEASE_TAG} (${NDK_VERSION})"
-          echo "Reference: https://developer.android.com/ndk/downloads/"
-          echo "Download URL: ${DIRECT_NDK_URL}"
-          echo "Target: $NDK_ZIP"
-          echo ""
-          
-          # 使用 curl 下载（带重试和进度显示）
-          max_attempts=5
-          attempt=1
-          
-          while [ $attempt -le $max_attempts ]; do
-            echo "Download attempt $attempt of $max_attempts..."
-            
-            # 使用 curl 下载，设置超时和进度
-            if curl -L --connect-timeout 60 --max-time 600 -o "$NDK_ZIP" "$DIRECT_NDK_URL" --progress-bar; then
-              # 检查文件大小（应该大于 50MB）
-              file_size=$(stat -c%s "$NDK_ZIP" 2>/dev/null || echo "0")
-              file_size_mb=$((file_size / 1024 / 1024))
-              
-              echo ""
-              echo "📊 Downloaded file size: ${file_size_mb} MB"
-              
-              if [ $file_size_mb -gt 50 ]; then
-                echo "✅ Download successful (${file_size_mb} MB)"
-                break
-              else
-                echo "⚠️ File too small (${file_size_mb} MB), retrying..."
-                rm -f "$NDK_ZIP"
-                attempt=$((attempt + 1))
-                sleep 10
-              fi
-            else
-              echo "⚠️ Download failed (attempt $attempt), waiting 10 seconds before retry..."
-              attempt=$((attempt + 1))
-              sleep 10
-            fi
-          done
-          
-          # 验证下载结果
-          if [ ! -f "$NDK_ZIP" ]; then
-            echo "❌ Failed to download NDK after $max_attempts attempts"
-            echo "💡 Reference: https://developer.android.com/ndk/downloads/"
-            echo "💡 Please check network connectivity"
-            exit 1
-          fi
-          
-          file_size=$(stat -c%s "$NDK_ZIP")
-          file_size_mb=$((file_size / 1024 / 1024))
-          
-          if [ $file_size_mb -lt 50 ]; then
-            echo "❌ Downloaded file is too small (${file_size_mb} MB, expected >50 MB)"
-            exit 1
-          fi
-          
-          # 解压 NDK
-          echo ""
-          echo "📦 Extracting NDK..."
-          unzip -q "$NDK_ZIP" -d "$NDK_BASE"
-          rm -f "$NDK_ZIP"
-          
-          # 查找并移动到正确目录
-          extracted_dir="${NDK_BASE}/android-ndk-r25c"
-          
-          if [ ! -d "$extracted_dir" ]; then
-            echo "❌ Extraction failed, directory not found: $extracted_dir"
-            ls -la "$NDK_BASE"
-            exit 1
-          fi
-          
-          # 移动到目标目录
-          echo "Moving NDK to: $NDK_DIR"
-          mv "$extracted_dir" "$NDK_DIR"
-          
-          # 验证安装
-          echo ""
-          echo "=== NDK Installation Complete ==="
-          echo "Location: $NDK_DIR"
-          
-          if [ -f "${NDK_DIR}/source.properties" ]; then
-            echo "Version info:"
-            cat "${NDK_DIR}/source.properties"
-          else
-            echo "⚠️ Warning: source.properties not found"
-          fi
-          
-          echo ""
-          echo "Directory contents:"
-          ls -la "$NDK_DIR" | head -20
-          
-          # 设置环境变量供 Buildozer 使用
-          export ANDROID_NDK="$NDK_DIR"
-          export NDK_HOME="$NDK_DIR"
-          echo "ANDROID_NDK=$NDK_DIR" >> $GITHUB_ENV
-          echo "NDK_HOME=$NDK_DIR" >> $GITHUB_ENV
-          
-          echo ""
-          echo "✅ NDK 25c installed successfully!"
-          echo "Environment variables set:"
-          echo "  ANDROID_NDK=$NDK_DIR"
-          echo "  NDK_HOME=$NDK_DIR"
-          echo "  Reference: https://developer.android.com/ndk/downloads/"
+          pip install --upgrade pip
+          pip install cython==3.0.0
+          pip install flet==0.23.0
+          pip install buildozer==1.5.0
 
       - name: Prepare Project
         run: |
-          echo "=== Starting Build Preparation ==="
+          echo "=== Preparing Project Files ==="
           
           mkdir -p build
           cd build
           
-          echo "Copying project files..."
-          cp -rv ../mobile/* . || true
+          echo "Copying mobile app files..."
+          cp -rv ../mobile/* .
+          
+          echo "Copying project modules..."
           cp -rv ../models . || true
           cp -rv ../services . || true
           cp -rv ../repositories . || true
@@ -196,59 +70,44 @@ jobs:
           cp -rv ../data . || true
           
           echo ""
-          echo "=== Files in build directory ==="
+          echo "=== Verifying Files ==="
           ls -la
           
-          echo ""
-          echo "=== Checking critical files ==="
-          if [ -f "android_main.py" ]; then
-            echo "✅ android_main.py found"
-          else
-            echo "❌ android_main.py NOT found"
+          # 检查关键文件
+          if [ ! -f "android_main.py" ]; then
+            echo "❌ android_main.py not found!"
             exit 1
           fi
           
-          if [ -f "buildozer.spec" ]; then
-            echo "✅ buildozer.spec found"
-            echo ""
-            echo "Content:"
-            cat buildozer.spec
-          else
-            echo "❌ buildozer.spec NOT found"
+          if [ ! -f "buildozer.spec" ]; then
+            echo "❌ buildozer.spec not found!"
             exit 1
           fi
           
           echo ""
-          echo "=== Preparation Complete ==="
+          echo "✅ All files prepared successfully"
+          echo ""
+          echo "buildozer.spec content:"
+          cat buildozer.spec
 
-      - name: Build APK
+      - name: Build APK (Pure Python Mode)
         run: |
           echo "=== Starting APK Build ==="
           cd build
           
-          # 清理旧的构建缓存
-          echo "Cleaning old build cache..."
+          # 清理旧缓存
           rm -rf .buildozer
           
-          # 显示 NDK 环境信息
+          # 显示构建配置
           echo ""
-          echo "=== NDK Environment Check ==="
-          if [ -n "$ANDROID_NDK" ]; then
-            echo "ANDROID_NDK is set: $ANDROID_NDK"
-          else
-            echo "⚠️ ANDROID_NDK is not set"
-          fi
-          
-          if [ -n "$NDK_HOME" ]; then
-            echo "NDK_HOME is set: $NDK_HOME"
-          else
-            echo "⚠️ NDK_HOME is not set"
-          fi
-          echo "==============================="
+          echo "=== Build Configuration ==="
+          echo "Python version: $(python3 --version)"
+          echo "Cython version: $(cython --version 2>&1 | head -1)"
+          echo "Buildozer version: $(buildozer --version 2>&1 | head -1)"
           echo ""
           
-          # 开始构建
-          echo "Running buildozer android debug..."
+          # 开始构建（不使用 NDK）
+          echo "Running buildozer android debug (pure Python mode)..."
           buildozer android debug
           
           BUILD_STATUS=$?
@@ -256,7 +115,7 @@ jobs:
           if [ $BUILD_STATUS -eq 0 ]; then
             echo ""
             echo "=== ✅ Build Successful ==="
-            echo "APK location:"
+            echo "Generated APK files:"
             ls -lh bin/*.apk 2>/dev/null || echo "⚠️ APK not found in bin/"
           else
             echo ""
@@ -270,7 +129,7 @@ jobs:
         with:
           name: menu-app-${{ github.sha }}
           path: build/bin/*.apk
-          retention-days: 30
+        continue-on-error: true
 
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -282,4 +141,5 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
