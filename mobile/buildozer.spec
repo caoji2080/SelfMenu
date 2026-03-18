@@ -6,9 +6,9 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,atlas,db,csv,json
 source.exclude_exts = spec,pyc,__pycache__,.git,.idea
 version = 1.0.0
-requirements = python3,flet==0.23.0
+requirements = python3,flet==0.23.0,sqlite3
 orientation = portrait
-android.permissions = INTERNET,ACCESS_NETWORK_STATE
+android.permissions = INTERNET,ACCESS_NETWORK_STATE,WRITE_EXTERNAL_STORAGE,READ_EXTERNAL_STORAGE
 android.api = 32
 android.minapi = 21
 android.accept_sdk_license = True
@@ -19,3 +19,4 @@ android.apptheme = @android:style/Theme.NoTitleBar
 [buildozer]
 log_level = 2
 warn_on_root = 1
+

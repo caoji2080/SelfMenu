@@ -1,9 +1,31 @@
-
 """
 应用配置和常量定义
 """
 import os
 from pathlib import Path
+import platform
+
+
+def get_db_path():
+    """获取数据库路径（适配 Android）"""
+    # 检测是否在 Android 环境
+    try:
+        # Android 环境检测
+        from jnius import autoclass  # 如果能导入 jnius，说明在 Android 上
+        PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        context = PythonActivity.mActivity
+
+        # 使用应用私有目录
+        files_dir = context.getFilesDir().getAbsolutePath()
+        db_dir = Path(files_dir) / "databases"
+        db_dir.mkdir(parents=True, exist_ok=True)
+        return db_dir / "menu_app.db"
+    except (ImportError, Exception):
+        # 非 Android 环境，使用默认路径
+        DATA_DIR = Path(__file__).parent / "data"
+        DATA_DIR.mkdir(exist_ok=True)
+        return DATA_DIR / "menu_app.db"
+
 
 # 应用基础信息
 APP_NAME = "个人菜谱管理系统"
@@ -13,13 +35,18 @@ APP_AUTHOR = "MenuApp Team"
 # 路径配置
 BASE_DIR = Path(__file__).parent
 DATA_DIR = BASE_DIR / "data"
-DB_PATH = DATA_DIR / "menu_app.db"
+
+# 确保基础目录存在（非 Android 环境）
+try:
+    from jnius import autoclass
+except ImportError:
+    # 只在非 Android 环境创建目录
+    for directory in [DATA_DIR, BASE_DIR / "data" / "export", BASE_DIR / "data" / "import"]:
+        directory.mkdir(exist_ok=True)
+
+DB_PATH = get_db_path()
 EXPORT_DIR = DATA_DIR / "export"
 IMPORT_DIR = DATA_DIR / "import"
-
-# 确保目录存在
-for directory in [DATA_DIR, EXPORT_DIR, IMPORT_DIR]:
-    directory.mkdir(exist_ok=True)
 
 # 窗口配置
 WINDOW_WIDTH = 1200
@@ -67,4 +94,3 @@ DEFAULT_CATEGORIES = [
     {'name': '汤品', 'icon': '🍲', 'description': '汤类菜品'},
     {'name': '快餐', 'icon': '🍔', 'description': '快捷简餐'},
 ]
-

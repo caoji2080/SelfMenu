@@ -82,6 +82,7 @@ jobs:
           cp -rv ../repositories . || true
           cp -rv ../utils . || true
           cp -rv ../data . || true
+          cp -rv ../*.py . || true
           
           echo ""
           echo "=== Verifying Files ==="
@@ -180,3 +181,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+

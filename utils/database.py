@@ -12,6 +12,7 @@ class Database:
 
     _instance: Optional['Database'] = None
     _connection: Optional[sqlite3.Connection] = None
+    _initialized: bool = False
 
     def __new__(cls) -> 'Database':
         if cls._instance is None:
@@ -22,6 +23,11 @@ class Database:
         if self._connection is None:
             self._connection = sqlite3.connect(DB_PATH, check_same_thread=False)
             self._connection.row_factory = sqlite3.Row
+
+            # 自动初始化表结构
+            if not self._initialized:
+                self.init_tables()
+                self._initialized = True
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -144,6 +150,30 @@ class Database:
 
         for sql in tables_sql:
             self.execute(sql)
+
+        # 初始化默认类别（如果不存在）
+        self._init_default_categories()
+
+    def _init_default_categories(self):
+        """初始化默认类别"""
+        from app_config import DEFAULT_CATEGORIES
+
+        # 检查是否已有类别
+        existing_count = self.fetchone("SELECT COUNT(*) as cnt FROM categories")
+        if existing_count and existing_count.get('cnt', 0) > 0:
+            return  # 已有数据，不插入
+
+        # 插入默认类别
+        for cat in DEFAULT_CATEGORIES:
+            try:
+                self.insert('categories', {
+                    'name': cat['name'],
+                    'icon': cat.get('icon', '🍽️'),
+                    'description': cat.get('description', ''),
+                    'sort_order': 0
+                })
+            except Exception:
+                pass  # 忽略重复插入错误
 
 
 # 创建全局数据库实例
