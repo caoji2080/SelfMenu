@@ -1,5 +1,5 @@
       - name: Prepare Project
-        run: |
+        run: 
           echo "=== Preparing Project Files ==="
           
           mkdir -p build
