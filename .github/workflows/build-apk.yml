@@ -37,7 +37,19 @@ jobs:
             autoconf \
             automake \
             pkg-config \
-            libncursesw6
+            libncursesw6 \
+            libbz2-dev \
+            libreadline-dev \
+            libsqlite3-dev \
+            llvm \
+            libncursesw5-dev \
+            xz-utils \
+            tk-dev \
+            libxml2-dev \
+            libxmlsec1-dev \
+            liblzma-dev \
+            libtool \
+            libltdl-dev
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
