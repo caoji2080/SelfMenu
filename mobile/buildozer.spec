@@ -3,7 +3,7 @@ title = MenuApp
 package.name = menuapp
 package.domain = com.menuapp
 source.dir = .
-source.include_exts = py,png,jpg,kv,atlas,db,csv,json
+source.include_exts = py,png,jpg,kv,atlas,db,csv,json,log
 source.exclude_exts = spec,pyc,__pycache__,.git,.idea
 version = 1.0.0
 requirements = python3,flet==0.23.0,sqlite3

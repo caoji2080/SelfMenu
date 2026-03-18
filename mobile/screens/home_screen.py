@@ -1,6 +1,6 @@
 # Filename: mobile/screens/home_screen.py
 # Directory: D:\MenuApp\mobile\screens\home_screen.py
-# Function: App Home Screen - Welcome message and quick actions
+# Function: App Home Screen with proper icons
 
 import flet as ft
 from datetime import datetime
@@ -20,7 +20,7 @@ class HomeScreen(ft.Container):
         self.recent_recipes = []
         self.expand = True
 
-        # Build UI lazily in did_mount
+        # Show loading initially
         self.content = ft.Column([
             ft.Container(
                 content=ft.Text("Loading...", size=16),
@@ -30,10 +30,10 @@ class HomeScreen(ft.Container):
 
     def did_mount(self):
         """Called after component is mounted"""
-        print("Home screen mounted, building UI...")
+        print("🏠 Home screen mounted, building UI...")
         self.content = self._build_ui()
         self.update()
-        print("Home screen UI built successfully")
+        print("✅ Home screen UI built successfully")
 
     def _build_ui(self):
         """Build the UI"""
@@ -56,7 +56,7 @@ class HomeScreen(ft.Container):
             else:
                 self.recent_recipes = []
         except Exception as e:
-            print(f"Error getting data: {e}")
+            print(f"⚠️ Error getting data: {e}")
             self.recipe_count = 0
             self.category_count = 0
             self.favorite_count = 0
@@ -70,7 +70,7 @@ class HomeScreen(ft.Container):
                 # Header
                 ft.Container(
                     content=ft.Row([
-                        ft.Text("[icon]", size=32),
+                        ft.Icon(ft.icons.RESTAURANT, size=32, color=ft.colors.WHITE),
                         ft.Text("Recipe Manager", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                     ], alignment=ft.MainAxisAlignment.START),
                     padding=ft.padding.symmetric(horizontal=20, vertical=15),
@@ -101,31 +101,32 @@ class HomeScreen(ft.Container):
                 # Stats cards
                 ft.Container(
                     content=ft.Row([
-                        self._create_stat_card("[icon]", "Recipes", str(self.recipe_count), "#E3F2FD", "/recipes"),
-                        self._create_stat_card("[icon]", "Categories", str(self.category_count), "#E8F5E9", "/categories"),
-                        self._create_stat_card("[star]", "Favorites", str(self.favorite_count), "#FFF3E0", "/favorites"),
+                        self._create_stat_card(ft.icons.BOOK, "Recipes", str(self.recipe_count), "#E3F2FD", "/recipes"),
+                        self._create_stat_card(ft.icons.LABEL, "Categories", str(self.category_count), "#E8F5E9", "/categories"),
+                        self._create_stat_card(ft.icons.STAR, "Favorites", str(self.favorite_count), "#FFF3E0", "/favorites"),
                     ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
                     padding=15,
                     margin=ft.margin.symmetric(horizontal=15, vertical=5),
                 ),
 
-                # Quick actions
+                # Quick actions title
                 ft.Container(
                     content=ft.Text("Quick Actions", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                     padding=ft.padding.only(left=15, top=10, bottom=5),
                 ),
 
+                # Quick actions buttons
                 ft.Container(
                     content=ft.Row([
-                        self._create_action_button("[edit]", "New Recipe", "/new_recipe"),
-                        self._create_action_button("[search]", "Search", "/search"),
-                        self._create_action_button("[label]", "Categories", "/categories"),
-                        self._create_action_button("[upload]", "Import/Export", "/import_export"),
+                        self._create_action_button(ft.icons.ADD_CIRCLE_OUTLINE, "New Recipe", "/new_recipe"),
+                        self._create_action_button(ft.icons.SEARCH, "Search", "/search"),
+                        self._create_action_button(ft.icons.LABEL_OUTLINE, "Categories", "/categories"),
+                        self._create_action_button(ft.icons.UPLOAD_FILE, "Import/Export", "/import_export"),
                     ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
                     padding=15,
                 ),
 
-                # Recent recipes
+                # Recent recipes title
                 ft.Container(
                     content=ft.Row([
                         ft.Text("Recent Recipes", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
@@ -137,6 +138,7 @@ class HomeScreen(ft.Container):
                     padding=ft.padding.only(left=15, top=10, bottom=5),
                 ),
 
+                # Recent recipes list
                 self._create_recent_recipes_list(),
             ],
             scroll=ft.ScrollMode.AUTO,
@@ -210,14 +212,14 @@ class HomeScreen(ft.Container):
     def on_recipe_click(self, recipe):
         """Handle recipe click"""
         route = f"/recipe/{recipe.id}"
-        print(f"Recipe clicked: {route}")
+        print(f"🔍 Recipe clicked: {route}")
         self.on_navigate(route, recipe_id=recipe.id)
 
-    def _create_stat_card(self, icon: str, label: str, value: str, bgcolor: str, navigate_route: str):
+    def _create_stat_card(self, icon, label: str, value: str, bgcolor: str, navigate_route: str):
         """Create stat card"""
         return ft.Container(
             content=ft.Column([
-                ft.Text(icon, size=28),
+                ft.Icon(icon, size=28, color=ft.colors.BLACK87),
                 ft.Text(value, size=20, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                 ft.Text(label, size=12, color=ft.colors.GREY_700),
             ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=5),
@@ -231,18 +233,18 @@ class HomeScreen(ft.Container):
 
     def _handle_stat_click(self, route: str):
         """Handle stat card click"""
-        print(f"Stat card clicked: {route}")
+        print(f"📊 Stat card clicked: {route}")
         if route == "/favorites":
-            print("Favorites feature not implemented yet")
+            print("⚠️ Favorites feature not implemented yet")
             return
         self.on_navigate(route)
 
-    def _create_action_button(self, icon: str, label: str, route: str):
+    def _create_action_button(self, icon, label: str, route: str):
         """Create action button"""
         return ft.Container(
             content=ft.Column([
                 ft.Container(
-                    content=ft.Text(icon, size=32),
+                    content=ft.Icon(icon, size=32, color=ft.colors.BLACK87),
                     padding=15,
                     bgcolor=ft.colors.GREY_200,
                     border_radius=50,
