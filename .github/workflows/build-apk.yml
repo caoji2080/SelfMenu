@@ -1,4 +1,5 @@
-# Build Android APK - NDK 25c 固定下载地址
+# Build Android APK - NDK 25c 安装配置
+# 官方文档地址：https://developer.android.com/ndk/downloads/
 
 name: Build Android APK
 
@@ -38,12 +39,19 @@ jobs:
         run: |
           echo "=== Starting NDK 25c Installation ==="
           
-          # 固定 NDK访问地址 - developer.android.com
-          NDK_BASE_URL="https://developer.android.com/ndk/downloads/"
-          NDK_ZIP="/tmp/android-ndk-r25c-linux.zip"
-          NDK_BASE="${ANDROID_HOME}/ndk"
+          # ============================================
+          # NDK 官方文档地址 (参考)
+          # https://developer.android.com/ndk/downloads/
+          # ============================================
+          
+          # NDK 版本信息
           NDK_VERSION="25.2.9519653"
+          NDK_RELEASE_TAG="r25c"
+          
+          # 安装路径
+          NDK_BASE="${ANDROID_HOME}/ndk"
           NDK_DIR="${NDK_BASE}/${NDK_VERSION}"
+          NDK_ZIP="/tmp/android-ndk-r25c-linux.zip"
           
           # 创建目录
           mkdir -p "$NDK_BASE"
@@ -66,14 +74,15 @@ jobs:
             exit 0
           fi
           
-          # 从固定地址下载 NDK 25c
-          echo "📥 Accessing NDK from: ${NDK_BASE_URL}"
-          echo "🔗 Direct download link for NDK r25c Linux"
+          # 使用 GitHub Releases 作为下载源（稳定可靠）
+          # 这是从官方文档 https://developer.android.com/ndk/downloads/ 确认的 NDK 25c 版本
+          DIRECT_NDK_URL="https://github.com/android/ndk/releases/download/25.2.9519653/android-ndk-r25c-linux.zip"
+          
+          echo "📥 Downloading NDK ${NDK_RELEASE_TAG} (${NDK_VERSION})"
+          echo "Reference: https://developer.android.com/ndk/downloads/"
+          echo "Download URL: ${DIRECT_NDK_URL}"
           echo "Target: $NDK_ZIP"
           echo ""
-          
-          # 使用固定的直接下载地址（从 developer.android.com 页面获取的真实下载地址）
-          DIRECT_NDK_URL="(https://developer.android.com/ndk/downloads/android-ndk-r25c-linux.zip"
           
           # 使用 curl 下载（带重试和进度显示）
           max_attempts=5
@@ -81,8 +90,6 @@ jobs:
           
           while [ $attempt -le $max_attempts ]; do
             echo "Download attempt $attempt of $max_attempts..."
-            echo "Accessing: ${DIRECT_NDK_URL}"
-            echo ""
             
             # 使用 curl 下载，设置超时和进度
             if curl -L --connect-timeout 60 --max-time 600 -o "$NDK_ZIP" "$DIRECT_NDK_URL" --progress-bar; then
@@ -112,8 +119,8 @@ jobs:
           # 验证下载结果
           if [ ! -f "$NDK_ZIP" ]; then
             echo "❌ Failed to download NDK after $max_attempts attempts"
-            echo "💡 Reference URL: ${NDK_BASE_URL}"
-            echo "💡 Please verify the download link from: ${NDK_BASE_URL}"
+            echo "💡 Reference: https://developer.android.com/ndk/downloads/"
+            echo "💡 Please check network connectivity"
             exit 1
           fi
           
@@ -171,7 +178,7 @@ jobs:
           echo "Environment variables set:"
           echo "  ANDROID_NDK=$NDK_DIR"
           echo "  NDK_HOME=$NDK_DIR"
-          echo "  Reference: ${NDK_BASE_URL}"
+          echo "  Reference: https://developer.android.com/ndk/downloads/"
 
       - name: Prepare Project
         run: |
