@@ -38,8 +38,8 @@ jobs:
         run: |
           echo "=== Starting NDK 25c Installation ==="
           
-          # 定义路径
-          NDK_URL="https://github.com/android/ndk/releases/download/25.2.9519653/android-ndk-r25c-linux.zip"
+          # 定义路径 - 使用 Google 官方下载源（最稳定）
+          NDK_URL="https://dl.google.com/android/repository/android-ndk-r25c-linux.zip"
           NDK_ZIP="/tmp/android-ndk-r25c-linux.zip"
           NDK_BASE="${ANDROID_HOME}/ndk"
           NDK_VERSION="25.2.9519653"
@@ -67,19 +67,21 @@ jobs:
           fi
           
           # 下载 NDK（带重试和进度显示）
-          echo "📥 Downloading NDK 25c from GitHub..."
+          echo "📥 Downloading NDK 25c from Google Official Server..."
           echo "URL: $NDK_URL"
           echo "Target: $NDK_ZIP"
           echo ""
           
-          # 使用 curl 下载（带重试和进度）
+          # 使用 wget 下载（带重试、超时和进度）
           max_attempts=3
           attempt=1
+          timeout_seconds=300
           
           while [ $attempt -le $max_attempts ]; do
             echo "Download attempt $attempt of $max_attempts..."
             
-            if curl -L -C - -o "$NDK_ZIP" "$NDK_URL" --progress-bar; then
+            # 使用 wget 下载，设置超时和重试
+            if wget --show-progress --timeout=$timeout_seconds --tries=1 -O "$NDK_ZIP" "$NDK_URL"; then
               # 检查文件大小（应该大于 50MB）
               file_size=$(stat -c%s "$NDK_ZIP" 2>/dev/null || echo "0")
               file_size_mb=$((file_size / 1024 / 1024))
@@ -106,6 +108,7 @@ jobs:
           # 验证下载结果
           if [ ! -f "$NDK_ZIP" ]; then
             echo "❌ Failed to download NDK after $max_attempts attempts"
+            echo "💡 Please check network connectivity or consider manual installation"
             exit 1
           fi
           
@@ -164,76 +167,8 @@ jobs:
           echo "  ANDROID_NDK=$NDK_DIR"
           echo "  NDK_HOME=$NDK_DIR"
 
-      - name: Prepare Project
-        run: |
-          echo "=== Starting Build Preparation ==="
-          
-          mkdir -p build
-          cd build
-          
-          echo "Copying project files..."
-          cp -rv ../mobile/* . || true
-          cp -rv ../models . || true
-          cp -rv ../services . || true
-          cp -rv ../repositories . || true
-          cp -rv ../utils . || true
-          cp -rv ../data . || true
-          
-          echo ""
-          echo "=== Files in build directory ==="
-          ls -la
-          
-          echo ""
-          echo "=== Checking critical files ==="
-          if [ -f "android_main.py" ]; then
-            echo "✅ android_main.py found"
-          else
-            echo "❌ android_main.py NOT found"
-            exit 1
-          fi
-          
-          if [ -f "buildozer.spec" ]; then
-            echo "✅ buildozer.spec found"
-            echo ""
-            echo "Content:"
-            cat buildozer.spec
-          else
-            echo "❌ buildozer.spec NOT found"
-            exit 1
-          fi
-          
-          echo ""
-          echo "=== Preparation Complete ==="
+# ... existing code ...
 
-      - name: Build APK
-        run: |
-          echo "=== Starting APK Build ==="
-          cd build
-          
-          # 清理旧的构建缓存
-          echo "Cleaning old build cache..."
-          rm -rf .buildozer
-          
-          # 显示 NDK 环境信息
-          echo ""
-          echo "=== NDK Environment Check ==="
-          if [ -n "$ANDROID_NDK" ]; then
-            echo "ANDROID_NDK is set: $ANDROID_NDK"
-          else
-            echo "⚠️ ANDROID_NDK is not set"
-          fi
-          
-          if [ -n "$NDK_HOME" ]; then
-            echo "NDK_HOME is set: $NDK_HOME"
-          else
-            echo "⚠️ NDK_HOME is not set"
-          fi
-          echo "==============================="
-          echo ""
-          
-          # 开始构建
-          echo "Running buildozer android debug..."
-          buildozer android debug
           
           BUILD_STATUS=$?
           
