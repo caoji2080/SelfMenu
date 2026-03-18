@@ -21,13 +21,17 @@ class Database:
 
     def __init__(self):
         if self._connection is None:
-            self._connection = sqlite3.connect(DB_PATH, check_same_thread=False)
-            self._connection.row_factory = sqlite3.Row
+            try:
+                self._connection = sqlite3.connect(DB_PATH, check_same_thread=False)
+                self._connection.row_factory = sqlite3.Row
 
-            # Auto-initialize tables
-            if not self._initialized:
-                self.init_tables()
-                self._initialized = True
+                # Auto-initialize tables
+                if not self._initialized:
+                    self.init_tables()
+                    self._initialized = True
+            except Exception as e:
+                print(f"Error initializing database: {e}")
+                raise
 
     @property
     def connection(self) -> sqlite3.Connection:
@@ -54,17 +58,25 @@ class Database:
 
     def fetchone(self, query: str, params: tuple = ()) -> Optional[Dict]:
         """Fetch single record"""
-        with self.cursor() as cursor:
-            cursor.execute(query, params)
-            row = cursor.fetchone()
-            return dict(row) if row else None
+        try:
+            with self.cursor() as cursor:
+                cursor.execute(query, params)
+                row = cursor.fetchone()
+                return dict(row) if row else None
+        except Exception as e:
+            print(f"Error in fetchone: {e}")
+            return None
 
     def fetchall(self, query: str, params: tuple = ()) -> List[Dict]:
         """Fetch multiple records"""
-        with self.cursor() as cursor:
-            cursor.execute(query, params)
-            rows = cursor.fetchall()
-            return [dict(row) for row in rows]
+        try:
+            with self.cursor() as cursor:
+                cursor.execute(query, params)
+                rows = cursor.fetchall()
+                return [dict(row) for row in rows]
+        except Exception as e:
+            print(f"Error in fetchall: {e}")
+            return []
 
     def insert(self, table: str, data: Dict) -> int:
         """Insert data"""
@@ -103,7 +115,7 @@ class Database:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 name TEXT NOT NULL UNIQUE,
                 description TEXT,
-                icon TEXT DEFAULT '🍽️',
+                icon TEXT DEFAULT '[icon]',
                 sort_order INTEGER DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -149,7 +161,10 @@ class Database:
         ]
 
         for sql in tables_sql:
-            self.execute(sql)
+            try:
+                self.execute(sql)
+            except Exception as e:
+                print(f"Error creating table: {e}")
 
         # Initialize default categories
         self._init_default_categories()
@@ -168,12 +183,12 @@ class Database:
             try:
                 self.insert('categories', {
                     'name': cat['name'],
-                    'icon': cat.get('icon', '🍽️'),
+                    'icon': cat.get('icon', '[icon]'),
                     'description': cat.get('description', ''),
                     'sort_order': 0
                 })
-            except Exception:
-                pass  # Ignore duplicate errors
+            except Exception as e:
+                print(f"Error inserting category {cat['name']}: {e}")
 
 
 # Create global database instance

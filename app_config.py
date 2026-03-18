@@ -29,7 +29,7 @@ def get_db_path():
 
 
 # Application Info
-APP_NAME = "Personal Recipe Management System"
+APP_NAME = "Recipe Manager"
 APP_VERSION = "1.0.0"
 APP_AUTHOR = "MenuApp Team"
 
@@ -70,25 +70,25 @@ RECIPE_STATUS = {
 # Difficulty Levels
 DIFFICULTY_LEVELS = ['Easy', 'Medium', 'Hard', 'Expert']
 
-# Category Icons (Unicode)
+# Category Icons (Unicode escape sequences)
 CATEGORY_ICONS = {
-    'Chinese': '\U0001F35C',
-    'Western': '\U0001F35D',
-    'Dessert': '\U0001F370',
-    'Drink': '\U0001F964',
-    'Salad': '\U0001F957',
-    'Soup': '\U0001F372',
-    'Fast Food': '\U0001F354',
-    'Other': '\U0001F37D'
+    'Chinese': '\\u{1f35c}',
+    'Western': '\\u{1f35d}',
+    'Dessert': '\\u{1f370}',
+    'Drink': '\\u{1f964}',
+    'Salad': '\\u{1f957}',
+    'Soup': '\\u{1f372}',
+    'Fast Food': '\\u{1f354}',
+    'Other': '\\u{1f37d}'
 }
 
 # Default Categories
 DEFAULT_CATEGORIES = [
-    {'name': 'Chinese', 'icon': '\U0001F35C', 'description': 'Chinese cuisine'},
-    {'name': 'Western', 'icon': '\U0001F35D', 'description': 'Western cuisine'},
-    {'name': 'Dessert', 'icon': '\U0001F370', 'description': 'Desserts and pastries'},
-    {'name': 'Drink', 'icon': '\U0001F964', 'description': 'Beverages and drinks'},
-    {'name': 'Salad', 'icon': '\U0001F957', 'description': 'Salads and light meals'},
-    {'name': 'Soup', 'icon': '\U0001F372', 'description': 'Soups and stews'},
-    {'name': 'Fast Food', 'icon': '\U0001F354', 'description': 'Quick meals and snacks'},
+    {'name': 'Chinese', 'icon': '\\u{1f35c}', 'description': 'Chinese cuisine'},
+    {'name': 'Western', 'icon': '\\u{1f35d}', 'description': 'Western cuisine'},
+    {'name': 'Dessert', 'icon': '\\u{1f370}', 'description': 'Desserts and pastries'},
+    {'name': 'Drink', 'icon': '\\u{1f964}', 'description': 'Beverages and drinks'},
+    {'name': 'Salad', 'icon': '\\u{1f957}', 'description': 'Salads and light meals'},
+    {'name': 'Soup', 'icon': '\\u{1f372}', 'description': 'Soups and stews'},
+    {'name': 'Fast Food', 'icon': '\\u{1f354}', 'description': 'Quick meals and snacks'},
 ]

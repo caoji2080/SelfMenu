@@ -1,13 +1,13 @@
-# 文件名：mobile/screens/home_screen.py
-# 目录：mobile/screens/home_screen.py
-# 功能：应用首页 - 显示欢迎信息、快捷操作和统计信息
+# Filename: mobile/screens/home_screen.py
+# Directory: D:\MenuApp\mobile\screens\home_screen.py
+# Function: App Home Screen - Welcome message and quick actions
 
 import flet as ft
 from datetime import datetime
 
 
 class HomeScreen(ft.Container):
-    """主屏幕 - 应用首页"""
+    """Home screen - Main landing page"""
 
     def __init__(self, on_navigate, recipe_service, category_service):
         super().__init__()
@@ -20,23 +20,33 @@ class HomeScreen(ft.Container):
         self.recent_recipes = []
         self.expand = True
 
-        # 直接在__init__中构建 UI
+        # Build UI lazily in did_mount
+        self.content = ft.Column([
+            ft.Container(
+                content=ft.Text("Loading...", size=16),
+                padding=20,
+            )
+        ])
+
+    def did_mount(self):
+        """Called after component is mounted"""
+        print("Home screen mounted, building UI...")
         self.content = self._build_ui()
+        self.update()
+        print("Home screen UI built successfully")
 
     def _build_ui(self):
-        """构建 UI"""
-        # 获取统计数据
+        """Build the UI"""
+        # Get statistics safely
         try:
             all_recipes = self.recipe_service.get_all_recipes()
             all_categories = self.category_service.get_all_categories()
-            self.recipe_count = len(all_recipes)
-            self.category_count = len(all_categories)
-            # TODO: 收藏功能待实现
+            self.recipe_count = len(all_recipes) if all_recipes else 0
+            self.category_count = len(all_categories) if all_categories else 0
             self.favorite_count = 0
 
-            # 获取最近更新的菜谱（按更新时间倒序排列，取前 2 个）
+            # Get recent recipes
             if all_recipes:
-                # 假设有 updated_at 字段，按更新时间排序
                 sorted_recipes = sorted(
                     all_recipes,
                     key=lambda r: r.updated_at or r.created_at or '',
@@ -46,34 +56,34 @@ class HomeScreen(ft.Container):
             else:
                 self.recent_recipes = []
         except Exception as e:
-            print(f"⚠️ 获取数据失败：{e}")
+            print(f"Error getting data: {e}")
             self.recipe_count = 0
             self.category_count = 0
             self.favorite_count = 0
             self.recent_recipes = []
 
         hour = datetime.now().hour
-        greeting = "早上好" if hour < 12 else ("下午好" if hour < 18 else "晚上好")
+        greeting = "Good Morning" if hour < 12 else ("Good Afternoon" if hour < 18 else "Good Evening")
 
         return ft.Column(
             controls=[
-                # 顶部栏
+                # Header
                 ft.Container(
                     content=ft.Row([
-                        ft.Text("🍳", size=32),
-                        ft.Text("个人菜谱管理系统", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
+                        ft.Text("[icon]", size=32),
+                        ft.Text("Recipe Manager", size=20, weight=ft.FontWeight.BOLD, color=ft.colors.WHITE),
                     ], alignment=ft.MainAxisAlignment.START),
                     padding=ft.padding.symmetric(horizontal=20, vertical=15),
                     bgcolor="#FF6B6B",
                     border_radius=ft.border_radius.only(bottom_left=15, bottom_right=15),
                 ),
 
-                # 欢迎区域
+                # Welcome
                 ft.Container(
                     content=ft.Column([
-                        ft.Text(f"{greeting}！", size=22, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                        ft.Text(f"{greeting}!", size=22, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                         ft.Text(
-                            f"📅 {datetime.now().strftime('%Y年%m月%d日 %A')}",
+                            f"{datetime.now().strftime('%Y-%m-%d')}",
                             size=14,
                             color=ft.colors.GREY_700,
                         ),
@@ -88,47 +98,45 @@ class HomeScreen(ft.Container):
                     margin=ft.margin.symmetric(horizontal=15, vertical=10),
                 ),
 
-                # 统计卡片（添加点击事件）
+                # Stats cards
                 ft.Container(
                     content=ft.Row([
-                        self._create_stat_card("📚", "菜谱总数", str(self.recipe_count), "#E3F2FD", "/recipes"),
-                        self._create_stat_card("🏷️", "类别数量", str(self.category_count), "#E8F5E9", "/categories"),
-                        self._create_stat_card("⭐", "收藏菜谱", str(self.favorite_count), "#FFF3E0", "/favorites"),
+                        self._create_stat_card("[icon]", "Recipes", str(self.recipe_count), "#E3F2FD", "/recipes"),
+                        self._create_stat_card("[icon]", "Categories", str(self.category_count), "#E8F5E9", "/categories"),
+                        self._create_stat_card("[star]", "Favorites", str(self.favorite_count), "#FFF3E0", "/favorites"),
                     ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
                     padding=15,
                     margin=ft.margin.symmetric(horizontal=15, vertical=5),
                 ),
 
-                # 快捷操作标题
+                # Quick actions
                 ft.Container(
-                    content=ft.Text("快捷操作", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                    content=ft.Text("Quick Actions", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                     padding=ft.padding.only(left=15, top=10, bottom=5),
                 ),
 
-                # 快捷操作按钮
                 ft.Container(
                     content=ft.Row([
-                        self._create_action_button("📝", "新建菜谱", "/new_recipe"),
-                        self._create_action_button("🔍", "搜索菜谱", "/search"),
-                        self._create_action_button("🏷️", "类别管理", "/categories"),
-                        self._create_action_button("📤", "导入导出", "/import_export"),
+                        self._create_action_button("[edit]", "New Recipe", "/new_recipe"),
+                        self._create_action_button("[search]", "Search", "/search"),
+                        self._create_action_button("[label]", "Categories", "/categories"),
+                        self._create_action_button("[upload]", "Import/Export", "/import_export"),
                     ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
                     padding=15,
                 ),
 
-                # 最近更新的菜谱标题
+                # Recent recipes
                 ft.Container(
                     content=ft.Row([
-                        ft.Text("最近更新的菜谱", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
+                        ft.Text("Recent Recipes", size=18, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                         ft.TextButton(
-                            "查看全部 >",
+                            "View All >",
                             on_click=lambda e: self.on_navigate("/recipes"),
                         ),
                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                     padding=ft.padding.only(left=15, top=10, bottom=5),
                 ),
 
-                # 最近更新的菜谱列表
                 self._create_recent_recipes_list(),
             ],
             scroll=ft.ScrollMode.AUTO,
@@ -136,14 +144,13 @@ class HomeScreen(ft.Container):
         )
 
     def _create_recent_recipes_list(self):
-        """创建最近更新的菜谱列表"""
+        """Create recent recipes list"""
         if not self.recent_recipes:
-            # 空状态
             return ft.Container(
                 content=ft.Column([
                     ft.Icon(ft.icons.RESTAURANT_MENU, size=60, color=ft.colors.GREY_400),
-                    ft.Text("暂无菜谱数据", size=14, color=ft.colors.GREY_600),
-                    ft.Text("点击\"新建菜谱\"开始创建你的第一个菜谱吧！", size=12, color=ft.colors.GREY_500),
+                    ft.Text("No recipes yet", size=14, color=ft.colors.GREY_600),
+                    ft.Text("Click 'New Recipe' to create your first recipe!", size=12, color=ft.colors.GREY_500),
                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, spacing=10),
                 padding=40,
                 bgcolor=ft.colors.GREY_100,
@@ -151,7 +158,6 @@ class HomeScreen(ft.Container):
                 margin=ft.margin.symmetric(horizontal=15, vertical=5),
             )
 
-        # 创建菜谱列表
         recipe_cards = []
         for recipe in self.recent_recipes:
             card = self._create_recent_recipe_card(recipe)
@@ -166,15 +172,13 @@ class HomeScreen(ft.Container):
         )
 
     def _create_recent_recipe_card(self, recipe):
-        """创建单个菜谱卡片"""
-        # 格式化更新时间
-        update_time = recipe.updated_at or recipe.created_at or '未知'
+        """Create recipe card"""
+        update_time = recipe.updated_at or recipe.created_at or 'Unknown'
         if len(update_time) > 16:
             update_time = update_time[:16].replace('T', ' ')
 
         return ft.Container(
             content=ft.Row([
-                # 左侧编号
                 ft.Container(
                     content=ft.Column([
                         ft.Text(f"#{recipe.id}", size=16, weight=ft.FontWeight.BOLD, color=ft.colors.PRIMARY),
@@ -182,22 +186,17 @@ class HomeScreen(ft.Container):
                     width=50,
                     alignment=ft.alignment.center,
                 ),
-                # 中间信息
                 ft.Container(
                     content=ft.Column([
                         ft.Text(recipe.title, size=16, weight=ft.FontWeight.BOLD, color=ft.colors.BLACK87),
                         ft.Row([
                             ft.Icon(ft.icons.LABEL_OUTLINE, size=14, color=ft.colors.GREY_600),
-                            ft.Text(recipe.category_name or "未分类", size=12, color=ft.colors.GREY_600),
-                            ft.VerticalDivider(width=1, color=ft.colors.GREY_400),
-                            ft.Icon(ft.icons.UPDATE, size=14, color=ft.colors.GREY_600),
-                            ft.Text(update_time, size=12, color=ft.colors.GREY_600),
+                            ft.Text(recipe.category_name or "Uncategorized", size=12, color=ft.colors.GREY_600),
                         ], spacing=5),
                     ], spacing=5),
                     expand=True,
                     padding=ft.padding.only(right=10),
                 ),
-                # 右侧箭头
                 ft.Icon(ft.icons.CHEVRON_RIGHT, color=ft.colors.GREY_400),
             ], alignment=ft.MainAxisAlignment.START),
             padding=15,
@@ -209,13 +208,13 @@ class HomeScreen(ft.Container):
         )
 
     def on_recipe_click(self, recipe):
-        """点击菜谱时的处理"""
+        """Handle recipe click"""
         route = f"/recipe/{recipe.id}"
-        print(f"🔍 点击最近更新的菜谱，路由：{route}, recipe_id={recipe.id}")
+        print(f"Recipe clicked: {route}")
         self.on_navigate(route, recipe_id=recipe.id)
 
     def _create_stat_card(self, icon: str, label: str, value: str, bgcolor: str, navigate_route: str):
-        """创建统计卡片（带点击事件）"""
+        """Create stat card"""
         return ft.Container(
             content=ft.Column([
                 ft.Text(icon, size=28),
@@ -227,24 +226,19 @@ class HomeScreen(ft.Container):
             border_radius=10,
             width=100,
             on_click=lambda e: self._handle_stat_click(navigate_route),
-            ink=True,  # 添加水波纹效果
+            ink=True,
         )
 
     def _handle_stat_click(self, route: str):
-        """处理统计卡片点击"""
-        print(f"📊 点击统计卡片，路由：{route}")
-
-        # 特殊处理收藏菜谱路由（如果路由是 /favorites，但目前没有这个页面，先跳转到菜谱列表）
+        """Handle stat card click"""
+        print(f"Stat card clicked: {route}")
         if route == "/favorites":
-            # TODO: 收藏功能待实现，暂时显示提示
-            print("⚠️ 收藏功能尚未实现")
-            # 可以添加一个提示框
+            print("Favorites feature not implemented yet")
             return
-
         self.on_navigate(route)
 
     def _create_action_button(self, icon: str, label: str, route: str):
-        """创建快捷操作按钮"""
+        """Create action button"""
         return ft.Container(
             content=ft.Column([
                 ft.Container(
@@ -262,7 +256,3 @@ class HomeScreen(ft.Container):
             padding=10,
             width=90,
         )
-
-    def did_mount(self):
-        """组件挂载后更新页面配置"""
-        print("✅ 菜谱主界面构建完成")
