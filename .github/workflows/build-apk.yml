@@ -37,8 +37,7 @@ jobs:
             autoconf \
             automake \
             pkg-config \
-            libncurses5 \
-            libtinfo5
+            libncursesw6
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -169,4 +168,3 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
-
