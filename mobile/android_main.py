@@ -1,6 +1,6 @@
 # 文件名：mobile/android_main.py
 # 目录：D:\MenuApp\mobile\android_main.py
-# 功能：Android Buildozer 应用入口
+# 功能：Android Buildozer 应用入口 - 使用正确的 Flet Android 初始化方式
 
 import sys
 from pathlib import Path
@@ -20,10 +20,16 @@ def main(page: ft.Page):
     page.padding = 0
     page.theme_mode = ft.ThemeMode.LIGHT
 
-    app = MenuApp(page)
-    page.add(app)
-    page.update()
+    try:
+        app = MenuApp(page)
+        page.add(app)
+        page.update()
+        print("✅ App loaded successfully")
+    except Exception as e:
+        print(f"❌ Error loading app: {e}")
+        page.add(ft.Text(f"Error: {e}", color=ft.colors.RED))
+        page.update()
 
 
 if __name__ == "__main__":
-    ft.app(target=main)
+    ft.app(main, view=ft.AppView.WEB_BROWSER, port=8550)
