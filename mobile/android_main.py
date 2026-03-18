@@ -1,110 +1,119 @@
 # Filename: mobile/android_main.py
 # Directory: D:\MenuApp\mobile\android_main.py
-# Function: Android Buildozer App Entry Point with Logging
+# Function: Minimal Android Entry Point for Testing
 
 import sys
 from pathlib import Path
-import traceback
-import logging
-from datetime import datetime
 
 # Add project root to Python path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-# Setup logging to file
-log_file = Path(project_root) / "data" / "app.log"
-try:
-    log_file.parent.mkdir(parents=True, exist_ok=True)
-    logging.basicConfig(
-        filename=log_file,
-        level=logging.DEBUG,
-        format='%(asctime)s - %(levelname)s - %(message)s'
-    )
-    logging.info("=== App Starting ===")
-except Exception as e:
-    print(f"Could not setup logging: {e}")
-
 import flet as ft
-from mobile.app import MenuApp
 
 
 def main(page: ft.Page):
-    """Android app entry function with error display"""
-    error_container = None
-
+    """Minimal test app - no dependencies"""
     try:
-        # Configure page
-        page.title = "Recipe Manager"
-        page.bgcolor = "#F7F7F7"
-        page.padding = 0
+        # Basic page setup
+        page.title = "Recipe Manager Test"
+        page.bgcolor = "#FFFFFF"
+        page.padding = 20
         page.theme_mode = ft.ThemeMode.LIGHT
 
-        logging.info("Creating MenuApp instance...")
+        print("=" * 60)
+        print("🚀 TEST APP STARTING")
+        print("=" * 60)
 
-        # Create a loading indicator
-        loading_text = ft.Text("Loading...", size=16, color=ft.colors.GREY_600)
-        page.add(loading_text)
+        # Simple test content
+        test_text = ft.Text(
+            "✅ App Started Successfully!\n\n"
+            "If you can see this, the basic app works.\n\n"
+            "Next step: Load full MenuApp...",
+            size=16,
+            text_align=ft.TextAlign.CENTER,
+        )
+
+        page.add(test_text)
         page.update()
 
-        # Create app instance
-        logging.info("Creating MenuApp instance...")
-        app = MenuApp(page)
+        print("✅ Basic UI displayed")
+        print("=" * 60)
 
-        logging.info("Adding app to page...")
-        page.controls.clear()
-        page.add(app)
+        # Try to import and load full app after 2 seconds
+        def load_full_app(e):
+            try:
+                page.controls.clear()
+                page.add(ft.Text("Loading full app...", size=16))
+                page.update()
 
-        logging.info("Updating page...")
-        page.update()
+                from mobile.app import MenuApp
+                app = MenuApp(page)
+                page.controls.clear()
+                page.add(app)
+                page.update()
 
-        logging.info("✅ App loaded successfully!")
+                print("✅ Full app loaded")
+            except Exception as e:
+                import traceback
+                error_msg = traceback.format_exc()
+                print(f"❌ Error loading full app: {e}")
+                print(error_msg)
 
-    except Exception as e:
-        error_msg = traceback.format_exc()
-        logging.error(f"❌ CRITICAL ERROR: {e}")
-        logging.error(f"Stack trace:\n{error_msg}")
-
-        # Display error to user
-        try:
-            if error_container is None:
-                error_container = ft.Container(
-                    content=ft.Column([
-                        ft.Text("⚠️ App Startup Failed", size=20, weight="bold", color=ft.colors.RED),
+                page.controls.clear()
+                page.add(
+                    ft.Column([
+                        ft.Text("⚠️ Error Loading Full App",
+                               size=18, color=ft.colors.RED, weight="bold"),
                         ft.Divider(),
-                        ft.Text(f"Error: {str(e)}", size=14, color=ft.colors.BLACK87),
-                        ft.Text("", size=10),
-                        ft.Text("Details (for developer):", size=12, weight="bold"),
+                        ft.Text(f"Error: {str(e)}", size=12),
                         ft.SelectableText(
-                            error_msg[:500] + "..." if len(error_msg) > 500 else error_msg,
+                            error_msg[:800] if len(error_msg) > 800 else error_msg,
                             size=10,
                             bgcolor=ft.colors.GREY_200,
                         ),
-                        ft.Divider(),
-                        ft.Text("Log saved to: /data/data/com.menuapp/files/app.log", size=10, color=ft.colors.GREY_600),
-                        ft.ElevatedButton(
-                            "Try Again",
-                            on_click=lambda _: page.route_refresh(),
-                        ),
-                    ], spacing=10),
-                    padding=20,
-                    bgcolor=ft.colors.WHITE,
-                    border_radius=10,
-                    border=ft.border.all(2, ft.colors.RED_300),
-                    margin=20,
+                        ft.ElevatedButton("Retry", on_click=load_full_app),
+                    ])
                 )
+                page.update()
 
-            page.controls.clear()
-            page.add(error_container)
-            page.update()
-        except Exception as inner_e:
-            logging.error(f"Failed to display error UI: {inner_e}")
+        # Add button to manually trigger full app load
+        page.add(
+            ft.ElevatedButton(
+                "Load Full MenuApp",
+                on_click=load_full_app,
+                style=ft.ButtonStyle(
+                    padding=20,
+                    bgcolor=ft.colors.BLUE,
+                ),
+            )
+        )
+
+        print("✅ Test app ready - click button to load full app")
+        print("=" * 60)
+
+    except Exception as e:
+        import traceback
+        error_msg = traceback.format_exc()
+        print(f"❌ CRITICAL ERROR in main(): {e}")
+        print(error_msg)
+
+        # This might not display if error is too early
+        try:
+            page.add(
+                ft.Container(
+                    content=ft.Column([
+                        ft.Text("💥 Fatal Error", size=20, color=ft.colors.RED),
+                        ft.Text(str(e), size=14),
+                    ]),
+                    bgcolor=ft.colors.WHITE,
+                    padding=20,
+                )
+            )
+        except:
+            pass
 
 
 if __name__ == "__main__":
-    logging.info("Starting main execution...")
-    try:
-        ft.app(main, view=ft.AppView.WEB_BROWSER, port=8550)
-    except Exception as e:
-        logging.critical(f"Fatal error in ft.app: {e}")
-        logging.critical(traceback.format_exc())
+    print("🔹 android_main.py executed")
+    ft.app(main, view=ft.AppView.WEB_BROWSER, port=8550)
