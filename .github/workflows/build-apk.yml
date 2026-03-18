@@ -36,7 +36,9 @@ jobs:
             curl \
             autoconf \
             automake \
-            pkg-config
+            pkg-config \
+            libncurses5 \
+            libtinfo5
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
@@ -51,6 +53,7 @@ jobs:
           pip install cython==3.0.0
           pip install flet==0.23.0
           pip install buildozer==1.5.0
+          pip list
 
       - name: Prepare Project
         run: |
@@ -104,13 +107,23 @@ jobs:
           echo "Python version: $(python3 --version)"
           echo "Cython version: $(cython --version 2>&1 | head -1)"
           echo "Buildozer version: $(buildozer --version 2>&1 | head -1)"
+          echo "Working directory: $(pwd)"
           echo ""
+          
+          # 设置环境变量
+          export PYTHONIOENCODING=utf-8
+          export LANG=C.UTF-8
+          export LC_ALL=C.UTF-8
           
           # 开始构建（不使用 NDK）
           echo "Running buildozer android debug (pure Python mode)..."
-          buildozer android debug
+          echo ""
           
-          BUILD_STATUS=$?
+          # 执行构建并捕获所有输出
+          set -o pipefail
+          buildozer android debug 2>&1 | tee build.log
+          
+          BUILD_STATUS=${PIPESTATUS[0]}
           
           if [ $BUILD_STATUS -eq 0 ]; then
             echo ""
@@ -120,9 +133,23 @@ jobs:
           else
             echo ""
             echo "=== ❌ Build Failed (exit code: $BUILD_STATUS) ==="
+            echo ""
+            echo "=== Last 100 lines of build log ==="
+            tail -n 100 build.log
+            echo ""
+            echo "=== Searching for errors in log ==="
+            grep -i "error\|failed\|exception" build.log | tail -20 || echo "No obvious errors found"
             exit $BUILD_STATUS
           fi
         timeout-minutes: 90
+
+      - name: Upload Build Log (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build/build.log
+        continue-on-error: true
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
