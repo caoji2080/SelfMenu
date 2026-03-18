@@ -1,24 +1,34 @@
-|NEW_FILE_CODE
-# 🍳 个人菜谱管理系统
+# 🍳 个人菜谱管理系统 - 占位文件
 
-一个基于 Python + Tkinter 开发的个人菜谱管理桌面应用。
+"""
+这是一个占位文件，实际的 README 应该是 markdown 格式。
+请查看 readme.md 获取完整文档。
+"""
 
-## ✨ 功能特性
+# 应用信息
+APP_NAME = "Personal Recipe Management System"
+VERSION = "1.0.0"
 
-### 核心功能
-- 📖 **菜谱管理** - 完整的增删改查功能
-- 🏷️ **类别管理** - 灵活的菜谱分类管理
-- 🔍 **高级搜索** - 多条件组合搜索
-- 📤 **分享功能** - 支持多种分享方式
-- 📥📤 **导入导出** - 支持 JSON/CSV格式
-- 📊 **统计分析** - 实时数据统计展示
+# 功能特性列表
+FEATURES = [
+    "Recipe Management - Complete CRUD operations",
+    "Category Management - Flexible recipe categorization",
+    "Advanced Search - Multi-condition search",
+    "Share Feature - Multiple sharing options",
+    "Import/Export - JSON/CSV format support",
+    "Statistics - Real-time data display"
+]
 
-### 技术特性
-- 🏗️ **分层架构** - Model-View-Controller 三层分离
-- 🔌 **模块化设计** - 高内聚低耦合
-- 🚌 **事件驱动** - 基于事件总线的模块间通信
-- 📝 **日志系统** - 完善的日志记录
-- ⚠️ **异常处理** - 统一的异常管理机制
+# 技术栈
+TECH_STACK = {
+    "desktop": "Python + Tkinter + Flet",
+    "mobile": "Python + Flet + Buildozer",
+    "database": "SQLite3",
+    "architecture": "MVC Layered Architecture"
+}
 
-## 🏗️ 项目结构
-
+if __name__ == "__main__":
+    print(f"{APP_NAME} v{VERSION}")
+    print("Features:")
+    for feature in FEATURES:
+        print(f"  - {feature}")

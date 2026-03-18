@@ -85,10 +85,17 @@ jobs:
           cp -rv ../*.py . || true
           
           echo ""
+          echo "=== Cleaning up unnecessary files ==="
+          # Remove files that may cause syntax errors
+          rm -f readme.py || true
+          rm -f tempfile_*.py || true
+          rm -f *.md || true
+          
+          echo ""
           echo "=== Verifying Files ==="
           ls -la
           
-          # 检查关键文件
+          # Check critical files
           if [ ! -f "android_main.py" ]; then
             echo "❌ android_main.py not found!"
             exit 1
@@ -110,10 +117,10 @@ jobs:
           echo "=== Starting APK Build ==="
           cd build
           
-          # 清理旧缓存
+          # Clean old cache
           rm -rf .buildozer
           
-          # 显示构建配置
+          # Show build configuration
           echo ""
           echo "=== Build Configuration ==="
           echo "Python version: $(python3 --version)"
@@ -122,16 +129,16 @@ jobs:
           echo "Working directory: $(pwd)"
           echo ""
           
-          # 设置环境变量
+          # Set environment variables
           export PYTHONIOENCODING=utf-8
           export LANG=C.UTF-8
           export LC_ALL=C.UTF-8
           
-          # 开始构建（不使用 NDK）
+          # Start build (no NDK required)
           echo "Running buildozer android debug (pure Python mode)..."
           echo ""
           
-          # 执行构建并捕获所有输出
+          # Execute build and capture all output
           set -o pipefail
           buildozer android debug 2>&1 | tee build.log
           
