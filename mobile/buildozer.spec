@@ -13,8 +13,6 @@ android.api = 32
 android.minapi = 21
 android.accept_sdk_license = True
 android.arch = arm64-v8a
-android.entrypoint = org.kivy.android.PythonActivity
-android.apptheme = @android:style/Theme.NoTitleBar
 
 [buildozer]
 log_level = 2
